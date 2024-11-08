@@ -105,6 +105,7 @@ class ResourceRegistrar
 
         foreach ($resourceMethods as $m) {
             $optionsForMethod = $options;
+
             if (isset($optionsForMethod['middleware_for'][$m])) {
                 $optionsForMethod['middleware'] ??= [];
                 $optionsForMethod['middleware'] = [...$optionsForMethod['middleware_for'][$m], ...$optionsForMethod['middleware']];
