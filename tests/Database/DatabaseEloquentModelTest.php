@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\FrozenModelException;
 use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\MissingAttributeException;
@@ -48,6 +49,7 @@ use Illuminate\Support\Stringable;
 use InvalidArgumentException;
 use LogicException;
 use Mockery as m;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use stdClass;
@@ -3192,6 +3194,111 @@ class DatabaseEloquentModelTest extends TestCase
 
         $this->assertInstanceOf(CustomEloquentCollection::class, $collection);
     }
+
+    public function testCanFreezeModel()
+    {
+        $model = new EloquentModelStub();
+        $this->assertFalse($model->isFrozen());
+        $model->freeze();
+        $this->assertTrue($model->isFrozen());
+        $model->freeze(false);
+        $this->assertFalse($model->isFrozen());
+    }
+
+    public function testCannotSetAttributeOnFrozenModel()
+    {
+        $model = new EloquentModelStub();
+        $model->freeze();
+
+        try {
+            $model->castedFloat = 199.2;
+            $this->fail("No FrozenModelException thrown");
+        } catch (FrozenModelException $exception) {
+            $this->assertEquals("Cannot set property [castedFloat] on Model [Illuminate\Tests\Database\EloquentModelStub] because it is frozen.", $exception->getMessage());
+        }
+    }
+
+    public function testCannotOffsetSetAttributeOnFrozenModel()
+    {
+        $model = new EloquentModelStub();
+        $model->freeze();
+
+        try {
+            $model['castedFloat'] = 199.2;
+            $this->fail("No FrozenModelException thrown");
+        } catch (FrozenModelException $exception) {
+            $this->assertEquals("Cannot set property [castedFloat] on Model [Illuminate\Tests\Database\EloquentModelStub] because it is frozen.", $exception->getMessage());
+        }
+    }
+
+    #[DataProvider('cannotLoadRelationsDataProvider')]
+    public function testCannotLoadRelationOnFrozenModel($relations, $relationsAsString)
+    {
+        $model = new EloquentModelStub();
+        $model->freeze();
+
+        try {
+            $model->load($relations);
+            $this->fail("No exception thrown");
+        } catch (FrozenModelException $exception) {
+            $this->assertEquals("Cannot load relation(s) [$relationsAsString] on Model [Illuminate\Tests\Database\EloquentModelStub] because it is frozen.", $exception->getMessage());
+        }
+    }
+
+    public static function cannotLoadRelationsDataProvider()
+    {
+        return [
+            'single relation as string' => ['morphToStub', 'morphToStub'],
+            'single relation in array' => [['morphToStub'], 'morphToStub'],
+            'multiple relations in array' => [['belongsToStub', 'morphsToStub'], 'belongsToStub, morphsToStub']
+        ];
+    }
+
+    public function testCannotFillOnFrozenModel()
+    {
+        $model = new EloquentModelStub();
+        $model->freeze();
+
+        try {
+            $model->fill([
+                'castedFloat' => 2001.3
+            ]);
+            $this->fail("No FrozenModelException thrown.");
+        } catch (FrozenModelException $exception) {
+            $this->assertEquals(
+                'Cannot fill properties on Model [Illuminate\Tests\Database\EloquentModelStub] because it is frozen.',
+                $exception->getMessage()
+            );
+        }
+    }
+
+    public function testCannotUnsetAttributeOnFrozenModel()
+    {
+        $model = new EloquentModelStub();
+        $model->freeze();
+
+        try {
+            unset($model['castedFloat']);
+            $this->fail("No exception was thrown");
+        } catch (FrozenModelException $exception) {
+            $this->assertEquals("Cannot unset properties or relations on Model [Illuminate\Tests\Database\EloquentModelStub] because it is frozen.", $exception->getMessage());
+        }
+    }
+
+    public function testCannotOffsetUnsetAttributeOnFrozenModel()
+    {
+        $model = new EloquentModelStub();
+        $model->freeze();
+
+        try {
+            $model->offsetUnset('castedFloat');
+            $this->fail("No exception was thrown");
+        } catch (FrozenModelException $exception) {
+            $this->assertEquals("Cannot unset properties or relations on Model [Illuminate\Tests\Database\EloquentModelStub] because it is frozen.", $exception->getMessage());
+        }
+    }
+
+
 }
 
 class EloquentTestObserverStub

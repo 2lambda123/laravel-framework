@@ -37,6 +37,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
         Concerns\GuardsAttributes,
         Concerns\PreventsCircularRecursion,
         ForwardsCalls;
+
     /** @use HasCollection<\Illuminate\Database\Eloquent\Collection<array-key, static>> */
     use HasCollection;
 
@@ -123,6 +124,13 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      * @var bool
      */
     protected $escapeWhenCastingToString = false;
+
+    /**
+     * Indicates that the model is frozen and cannot modify properties or load relations.
+     *
+     * @var bool
+     */
+    protected $frozen = false;
 
     /**
      * The connection resolver instance.
@@ -526,6 +534,10 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function fill(array $attributes)
     {
+        if ($this->frozen) {
+            throw FrozenModelException::forFill($this);
+        }
+
         $totallyGuarded = $this->totallyGuarded();
 
         $fillable = $this->fillableFromArray($attributes);
@@ -716,6 +728,10 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function load($relations)
     {
+        if ($this->frozen) {
+            throw FrozenModelException::forRelations($this, Arr::wrap($relations));
+        }
+
         $query = $this->newQueryWithoutRelationships()->with(
             is_string($relations) ? func_get_args() : $relations
         );
@@ -2118,6 +2134,25 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
     }
 
     /**
+     * @param  bool $frozen
+     * @return $this
+     */
+    public function freeze($frozen = true)
+    {
+        $this->frozen = $frozen;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFrozen()
+    {
+        return $this->frozen;
+    }
+
+    /**
      * Retrieve the child model query for a bound value.
      *
      * @param  string  $childType
@@ -2314,9 +2349,14 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      *
      * @param  mixed  $offset
      * @return void
+     * @throws  FrozenModelException
      */
     public function offsetUnset($offset): void
     {
+        if ($this->frozen) {
+            throw FrozenModelException::forUnset($this);
+        }
+
         unset($this->attributes[$offset], $this->relations[$offset]);
     }
 
