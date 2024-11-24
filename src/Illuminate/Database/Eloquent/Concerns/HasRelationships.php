@@ -107,8 +107,8 @@ trait HasRelationships
     /**
      * Set relation autoload callback for model and its relations.
      *
-     * @param mixed $context
-     * @param Closure $callback
+     * @param  mixed  $context
+     * @param  Closure  $callback
      * @return $this
      */
     public function usingRelationAutoloadCallback($context, Closure $callback)
@@ -167,7 +167,7 @@ trait HasRelationships
     /**
      * Trigger relation autoload callback and check if relation is loaded.
      *
-     * @param string $key
+     * @param  string  $key
      * @return bool
      */
     protected function handleRelationAutoload($key)
@@ -184,8 +184,8 @@ trait HasRelationships
     /**
      * Trigger relation autoload callback.
      *
-     * @param string $key
-     * @param array $keys
+     * @param  string  $key
+     * @param  array  $keys
      * @return void
      */
     protected function triggerRelationAutoloadCallback($key, $keys)
@@ -199,8 +199,8 @@ trait HasRelationships
     /**
      * Apply relation autoload callback to value.
      *
-     * @param string $key
-     * @param mixed $values
+     * @param  string  $key
+     * @param  mixed  $values
      * @return void
      */
     protected function applyRelationAutoloadCallbackToValue($key, $values)
