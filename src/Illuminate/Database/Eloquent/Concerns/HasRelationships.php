@@ -138,7 +138,7 @@ trait HasRelationships
      *
      * @return $this
      */
-    public function enableRelationAutoload()
+    public function withRelationAutoload()
     {
         if ($this->hasRelationAutoloadCallback()) {
             return $this;
