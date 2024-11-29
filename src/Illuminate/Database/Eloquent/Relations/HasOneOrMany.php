@@ -35,6 +35,13 @@ abstract class HasOneOrMany extends Relation
     protected $localKey;
 
     /**
+     * Attributes to be added to new instances of related models.
+     *
+     * @var array
+     */
+    protected $pendingAttributes = [];
+
+    /**
      * Create a new has one or many relationship instance.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<TRelatedModel>  $query
@@ -447,6 +454,12 @@ abstract class HasOneOrMany extends Relation
     {
         $model->setAttribute($this->getForeignKeyName(), $this->getParentKey());
 
+        foreach ($this->pendingAttributes as $key => $value) {
+            if (! $model->hasAttribute($key)) {
+                $model->setAttribute($key, $value);
+            }
+        }
+
         $this->applyInverseRelationToModel($model);
     }
 
@@ -503,6 +516,19 @@ abstract class HasOneOrMany extends Relation
         } else {
             $this->query->groupLimit($value, $this->getExistenceCompareKey());
         }
+
+        return $this;
+    }
+
+    /**
+     * Add attributes to be added to new instances of related models.
+     *
+     * @param  array  $attributes
+     * @return $this
+     */
+    public function withAttributes(array $attributes)
+    {
+        $this->pendingAttributes = array_merge($this->pendingAttributes, $attributes);
 
         return $this;
     }
