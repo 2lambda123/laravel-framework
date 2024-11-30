@@ -1872,7 +1872,7 @@ trait HasAttributes
     /**
      * Get all of the current attributes on the model.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function getAttributes()
     {
